@@ -1,4 +1,4 @@
-# 🤖 企业智能助手（Enterprise AI Assistant）
+# 🤖 企业智能助手（数字员工）
 
 ## 一、项目简介
 
