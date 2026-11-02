@@ -22,3 +22,6 @@ pgdata/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local README backup
+README_original.md
