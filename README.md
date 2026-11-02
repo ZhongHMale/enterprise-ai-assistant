@@ -1,5 +1,31 @@
 # 🤖 企业智能助手（数字员工）
 
+## 项目展示
+
+### 登录与用户端
+
+<p align="center">
+  <a href="docs/screenshots/01-login.png"><img src="docs/screenshots/01-login.png" width="49%" alt="登录页面"></a>
+  <a href="docs/screenshots/02-chat-rag.png"><img src="docs/screenshots/02-chat-rag.png" width="49%" alt="RAG 制度问答"></a>
+</p>
+
+### 智能体与人工审批
+
+<p align="center">
+  <a href="docs/screenshots/03-chat-agent-approval.png"><img src="docs/screenshots/03-chat-agent-approval.png" width="80%" alt="智能体工具调用与人工审批"></a>
+</p>
+
+### 管理后台
+
+<p align="center">
+  <a href="docs/screenshots/04-admin-users.png"><img src="docs/screenshots/04-admin-users.png" width="49%" alt="用户管理"></a>
+  <a href="docs/screenshots/05-admin-documents.png"><img src="docs/screenshots/05-admin-documents.png" width="49%" alt="知识库文档管理"></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/06-admin-approvals.png"><img src="docs/screenshots/06-admin-approvals.png" width="80%" alt="审批记录与合规审计"></a>
+</p>
+
 ## 一、项目简介
 
 一个企业内部 AI 助手：员工可以问公司制度（RAG）、让它算数/查天气（工具）、发通知（需人工审批）；管理者可以在后台管理知识库文档。
