@@ -1,0 +1,33 @@
+# PostgreSQL + pgvector 容器（企业版数据库 + 向量库）
+# 启动：docker compose up -d
+# 停止：docker compose down
+# 连接：postgresql://ai:ai123456@localhost:5432/ai_assistant
+#
+# 数据存在哪？（挂载配置在下面 volumes 那一行）
+#   默认：./pgdata（项目内）—— 克隆下来直接 `docker compose up -d` 就能跑，不用改配置
+#   进阶：想让"代码与数据分离"（生产推荐做法），就设一个环境变量 PGDATA_DIR 指向项目外：
+#         Windows        set PGDATA_DIR=D:/my-data/pgdata
+#         Linux / macOS  export PGDATA_DIR=/data/pgdata
+#   原理：compose 会读同目录下的 .env 做变量替换；没设 PGDATA_DIR 时用默认值 ./pgdata
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16   # 官方镜像，已内置 pgvector 扩展
+    container_name: ai-assistant-db
+    environment:
+      POSTGRES_USER: ai
+      POSTGRES_PASSWORD: ai123456
+      POSTGRES_DB: ai_assistant
+    ports:
+      - "5432:5432"
+    volumes:
+      # 格式：宿主机路径:容器内路径
+      # 默认存项目内 ./pgdata；设了环境变量 PGDATA_DIR 就存到那里（见文件顶部说明）
+      - ${PGDATA_DIR:-./pgdata}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai -d ai_assistant"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes: {}

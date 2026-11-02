@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 - 企业智能助手</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f5f7fb; min-height: 100vh; }
+
+  /* ===== 登录页 ===== */
+  .auth-wrap { height: 100vh; display: flex; align-items: center; justify-content: center;
+               background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+  .auth-card { background: #fff; border-radius: 16px; padding: 36px 32px; width: 380px;
+               box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .auth-card .logo { font-size: 26px; text-align: center; margin-bottom: 6px; }
+  .auth-card h2 { text-align: center; color: #1f2937; margin-bottom: 4px; }
+  .auth-card .sub { text-align: center; color: #9ca3af; font-size: 13px; margin-bottom: 22px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: #374151; margin-bottom: 6px; font-weight: 500; }
+  .field input { width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px;
+                 font-size: 14px; outline: none; transition: border-color .2s; }
+  .field input:focus { border-color: #4f46e5; }
+  .btn-login { width: 100%; padding: 12px; border: none; border-radius: 10px; cursor: pointer;
+               font-size: 15px; font-weight: 600; color: #fff; background: #111827; transition: opacity .2s; }
+  .btn-login:hover { opacity: .9; }
+  .err-msg { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 8px;
+             padding: 8px 12px; font-size: 13px; margin-bottom: 14px; display: none; }
+  .err-msg.show { display: block; }
+  .auth-tip { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 16px; }
+  .auth-tip a { color: #4f46e5; }
+
+  /* ===== 后台布局 ===== */
+  .admin-wrap { display: none; height: 100vh; }
+  .admin-wrap.show { display: flex; }
+  .sidebar { width: 200px; background: #111827; color: #fff; padding: 20px 0; flex-shrink: 0; }
+  .sidebar .brand { padding: 0 20px 18px; font-size: 16px; font-weight: 700;
+                    border-bottom: 1px solid #1f2937; }
+  .sidebar .brand span { color: #818cf8; }
+  .sidebar .nav-item { display: block; width: 100%; padding: 12px 20px; border: none;
+                       background: none; color: #9ca3af; font-size: 14px; text-align: left;
+                       cursor: pointer; transition: all .2s; }
+  .sidebar .nav-item:hover { background: #1f2937; color: #fff; }
+  .sidebar .nav-item.active { background: #4f46e5; color: #fff; font-weight: 600; }
+  .sidebar .back { display: block; padding: 14px 20px; color: #818cf8; font-size: 13px;
+                   text-decoration: none; border-top: 1px solid #1f2937; margin-top: 10px; }
+  .sidebar .back:hover { color: #fff; }
+  .main { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .main .topbar { display: flex; justify-content: space-between; align-items: center;
+                  margin-bottom: 20px; }
+  .main .topbar h2 { color: #1f2937; }
+  .main .topbar .user { font-size: 13px; color: #6b7280; }
+  .btn { padding: 7px 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: #4f46e5; color: #fff; }
+  .btn-danger { background: #dc2626; color: #fff; }
+  .btn-ghost { background: #e5e7eb; color: #374151; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 11px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
+  th { color: #6b7280; font-weight: 500; background: #f9fafb; }
+  tr:hover td { background: #f9fafb; }
+  .badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+  .badge-admin { background: #dbeafe; color: #1d4ed8; }
+  .badge-employee { background: #f3f4f6; color: #374151; }
+  .badge-approved { background: #dcfce7; color: #166534; }
+  .badge-rejected { background: #fee2e2; color: #991b1b; }
+  .badge-pending { background: #fef3c7; color: #92400e; }
+  .upload-bar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .upload-bar input[type=file] { font-size: 13px; }
+  .tip { font-size: 12px; color: #9ca3af; margin-top: 12px; }
+  .mini-avatar { width: 20px; height: 20px; border-radius: 50%; display: inline-block;
+                 vertical-align: -4px; margin-right: 4px; overflow: hidden; }
+  .mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ===== 个人信息弹窗（管理后台改头像用）===== */
+  .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4);
+                display: none; align-items: center; justify-content: center; z-index: 200; }
+  .modal-mask.show { display: flex; }
+  .modal { background: #fff; border-radius: 16px; padding: 28px; width: 340px;
+           text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .modal .big-avatar { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px;
+                       display: flex; align-items: center; justify-content: center;
+                       font-size: 30px; color: #fff; background: linear-gradient(135deg,#f59e0b,#d97706);
+                       overflow: hidden; }
+  .modal .big-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .modal .name { font-size: 18px; font-weight: 700; color: #1f2937; }
+  .modal .role-badge { display: inline-block; margin-top: 6px; padding: 3px 12px; border-radius: 12px;
+                       font-size: 12px; background: #fef3c7; color: #92400e; }
+  .modal .info { font-size: 13px; color: #6b7280; margin-top: 8px; }
+  .avatar-picker { margin-top: 16px; }
+  .avatar-picker .label { font-size: 12px; color: #6b7280; margin-bottom: 8px; text-align: left; }
+  .avatar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .avatar-grid button { font-size: 18px; padding: 6px 0; border: 1px solid #e5e7eb;
+                        border-radius: 8px; background: #fff; cursor: pointer; }
+  .avatar-grid button:hover { background: #fef3c7; border-color: #d97706; }
+  .avatar-grid button.active { background: #fef3c7; border-color: #d97706; }
+  .upload-btn { width: 100%; margin-top: 10px; padding: 9px; border: 1px dashed #d97706;
+                border-radius: 10px; background: #fffbeb; color: #92400e; cursor: pointer;
+                font-size: 13px; }
+  .modal .close { margin-top: 16px; width: 100%; padding: 10px; border: none; border-radius: 10px;
+                  background: #f3f4f6; color: #374151; cursor: pointer; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 登录（未登录） -->
+  <div v-if="!token" class="auth-wrap">
+    <div class="auth-card">
+      <div class="logo">🛠️</div>
+      <h2>管理后台</h2>
+      <div class="sub">仅管理员可进入</div>
+      <div class="err-msg" :class="{ show: errMsg }">{{ errMsg }}</div>
+      <div class="field"><label>用户名</label><input v-model="user" @keydown.enter="login" placeholder="admin"></div>
+      <div class="field"><label>密码</label><input v-model="pass" type="password" @keydown.enter="login" placeholder="admin123"></div>
+      <button class="btn-login" @click="login">登 录</button>
+      <div class="auth-tip">管理员账号：admin / admin123 · <a href="/">← 返回用户端</a></div>
+    </div>
+  </div>
+
+  <!-- 后台（已登录） -->
+  <div v-else class="admin-wrap show">
+    <div class="sidebar">
+      <div class="brand">🛠️ 管理<span>后台</span></div>
+      <button class="nav-item" :class="{ active: tab === 'users' }" @click="switchTab('users')">👥 用户管理</button>
+      <button class="nav-item" :class="{ active: tab === 'docs' }" @click="switchTab('docs')">📄 文档管理</button>
+      <button class="nav-item" :class="{ active: tab === 'approvals' }" @click="switchTab('approvals')">📋 审批记录</button>
+      <a class="back" href="/">← 返回用户端</a>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <h2>{{ tabTitle }}</h2>
+        <span class="user">
+          <button class="btn btn-ghost" @click="openProfile" title="点击查看/更换头像">
+            <span class="mini-avatar"><img v-if="avatarIsImage" :src="avatar"></span>
+            <span v-if="!avatarIsImage">{{ avatar || '👑' }}</span>
+            {{ username }}（管理员）
+          </button>
+          <button class="btn btn-ghost" @click="logout">退出</button>
+        </span>
+      </div>
+
+      <!-- 用户管理 -->
+      <div v-if="tab === 'users'" class="card">
+        <table>
+          <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>注册时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr v-for="u in users" :key="u.id">
+              <td>{{ u.id }}</td>
+              <td>{{ u.username }}</td>
+              <td><span class="badge" :class="u.role === 'admin' ? 'badge-admin' : 'badge-employee'">{{ u.role }}</span></td>
+              <td>{{ u.created_at }}</td>
+              <td>
+                <button v-if="u.username !== username" class="btn btn-ghost" @click="changeRole(u)">{{ u.role === 'admin' ? '降为员工' : '提升管理员' }}</button>
+                <button v-if="u.username !== username" class="btn btn-danger" @click="delUser(u)">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 文档管理 -->
+      <div v-if="tab === 'docs'" class="card">
+        <div class="upload-bar">
+          <input ref="docFile" type="file" accept=".txt" style="display:none" @change="onPickDoc">
+          <button class="btn btn-primary" @click="$refs.docFile.click()">📄 选择文件</button>
+          <span v-if="pickedDoc" style="font-size:13px;color:#374151">{{ pickedDoc }}</span>
+          <button class="btn btn-success" @click="uploadDoc">上传文档</button>
+          <button class="btn btn-ghost" @click="loadDocs">刷新</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>文件名</th><th>字数</th><th>知识块</th><th>上传时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr v-for="d in docs" :key="d.id">
+              <td>{{ d.id }}</td>
+              <td>{{ d.name }}</td>
+              <td>{{ d.characters }}</td>
+              <td>{{ d.chunk_count }}</td>
+              <td>{{ d.created_at }}</td>
+              <td><button class="btn btn-danger" @click="delDoc(d)">删除</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tip">上传会重建索引（切分→向量化→入库）；删除会同时删数据库记录、知识块和文件。</div>
+      </div>
+
+      <!-- 审批记录 -->
+      <div v-if="tab === 'approvals'" class="card">
+        <table>
+          <thead><tr><th>ID</th><th>会话</th><th>操作</th><th>参数</th><th>状态</th><th>审批人</th><th>时间</th></tr></thead>
+          <tbody>
+            <tr v-for="a in approvals" :key="a.id">
+              <td>{{ a.id }}</td>
+              <td>{{ a.thread_id }}</td>
+              <td>{{ a.tool }}</td>
+              <td style="max-width:220px;word-break:break-all">{{ a.args_json }}</td>
+              <td><span class="badge" :class="'badge-' + a.status">{{ a.status }}</span></td>
+              <td>{{ a.decided_by || '-' }}</td>
+              <td>{{ a.created_at }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tip">每次审批记录：谁批的、何时批的、结果——企业合规审计必备。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 个人信息弹窗（管理后台也能改头像）-->
+  <div class="modal-mask" :class="{ show: showProfile }" @click.self="showProfile = false">
+    <div class="modal">
+      <div class="big-avatar">
+        <img v-if="avatarIsImage" :src="avatar">
+        <span v-else>{{ avatar || '👑' }}</span>
+      </div>
+      <div class="name">{{ username }}</div>
+      <span class="role-badge">管理员</span>
+      <div class="info">点击下方换头像，或上传照片</div>
+      <div class="avatar-picker">
+        <div class="label">选择头像：</div>
+        <div class="avatar-grid">
+          <button v-for="a in avatars" :key="a" @click="changeAvatar(a)"
+                  :class="{ active: !avatarIsImage && avatar === a }">{{ a }}</button>
+        </div>
+        <input ref="avatarFile" type="file" accept="image/*" style="display:none" @change="onAvatarFile">
+        <button class="upload-btn" @click="$refs.avatarFile.click()">📷 上传照片（png/jpg，≤2MB）</button>
+      </div>
+      <button class="close" @click="showProfile = false">关 闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return {
+      token: localStorage.getItem("admin_token") || "",
+      username: localStorage.getItem("admin_user") || "",
+      avatar: "",   // 从数据库读取（与聊天界面同步）
+      user: "admin", pass: "", errMsg: "",
+      tab: "users",
+      users: [], docs: [], approvals: [],
+      showProfile: false, pickedDoc: "",
+      avatars: ["👑", "🦸", "🧙", "👤", "👩", "👨", "🧑", "🤖", "🦊", "🐱", "🐼", "😎", "👦", "👧"],
+    };
+  },
+  computed: {
+    tabTitle() { return { users: "用户管理", docs: "文档管理", approvals: "审批记录" }[this.tab] || ""; },
+    avatarIsImage() { return this.avatar && this.avatar.startsWith("/"); },
+  },
+  mounted() { if (this.token) { this.loadUsers(); this.loadMe(); } },
+  methods: {
+    async loadMe() {
+      // 从后端读当前用户信息（含头像）——和聊天界面共用同一份数据，天然同步
+      const res = await fetch("/auth/me", { headers: this.authHeader() });
+      if (res.ok) {
+        const d = await res.json();
+        this.username = d.username;
+        this.avatar = d.avatar || "👑";
+      }
+    },
+    openProfile() {
+      this.loadMe();          // 打开弹窗前刷新头像
+      this.showProfile = true;
+    },
+    // 切换 emoji 头像（与聊天界面同一接口，写数据库）
+    async changeAvatar(a) {
+      const res = await fetch("/auth/me/avatar", {
+        method: "PATCH",
+        headers: { ...this.authHeader(), "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar: a }),
+      });
+      if (res.ok) { this.avatar = a; }
+    },
+    // 上传照片头像
+    async onAvatarFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/auth/me/avatar/upload", {
+        method: "POST", headers: this.authHeader(), body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail || "上传失败"); return; }
+      this.avatar = data.avatar;
+    },
+    async login() {
+      this.errMsg = "";
+      if (!this.user.trim() || !this.pass) { this.errMsg = "请填写用户名和密码"; return; }
+      const body = new URLSearchParams({ username: this.user, password: this.pass });
+      const res = await fetch("/auth/login", {
+        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body,
+      });
+      const data = await res.json();
+      if (!res.ok) { this.errMsg = data.detail || "登录失败"; return; }
+      if (data.role !== "admin") { this.errMsg = "该账号不是管理员，无法进入后台"; return; }
+      this.token = data.access_token; this.username = data.username;
+      localStorage.setItem("admin_token", this.token);
+      localStorage.setItem("admin_user", this.username);
+      this.user = ""; this.pass = "";
+      this.loadUsers();
+      this.loadMe();   // 拉头像（与聊天界面同步）
+    },
+    logout() {
+      this.token = ""; this.username = "";
+      localStorage.removeItem("admin_token"); localStorage.removeItem("admin_user");
+    },
+    switchTab(t) { this.tab = t; if (t === "users") this.loadUsers(); if (t === "docs") this.loadDocs(); if (t === "approvals") this.loadApprovals(); },
+    authHeader() { return { Authorization: "Bearer " + this.token }; },
+    async loadUsers() {
+      const res = await fetch("/auth/users", { headers: this.authHeader() });
+      this.users = res.ok ? await res.json() : [];
+    },
+    async delUser(u) {
+      if (!confirm("确定删除用户 " + u.username + "？")) return;
+      await fetch("/auth/users/" + u.id, { method: "DELETE", headers: this.authHeader() });
+      this.loadUsers();
+    },
+    async changeRole(u) {
+      const role = u.role === "admin" ? "employee" : "admin";
+      if (!confirm("确定把 " + u.username + " 改为「" + (role === "admin" ? "管理员" : "员工") + "」？")) return;
+      await fetch("/auth/users/" + u.id + "/role", {
+        method: "PATCH",
+        headers: { ...this.authHeader(), "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      this.loadUsers();
+    },
+    async loadDocs() {
+      const res = await fetch("/admin/documents", { headers: this.authHeader() });
+      this.docs = res.ok ? await res.json() : [];
+    },
+    onPickDoc(e) {
+      const file = e.target.files[0];
+      this.pickedDoc = file ? file.name : "";
+    },
+    async uploadDoc() {
+      const file = this.$refs.docFile.files[0];
+      if (!file) { alert("请先选择 .txt 文件"); return; }
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/admin/documents", { method: "POST", headers: this.authHeader(), body: fd });
+      const data = await res.json();
+      alert(data.message || "上传完成");
+      this.pickedDoc = "";
+      this.$refs.docFile.value = "";
+      this.loadDocs();
+    },
+    async delDoc(d) {
+      if (!confirm("确定删除文档 " + d.name + "？（数据库记录+文件都会删）")) return;
+      const res = await fetch("/admin/documents/" + d.id, { method: "DELETE", headers: this.authHeader() });
+      const data = await res.json();
+      alert(data.message || "已删除");
+      this.loadDocs();
+    },
+    async loadApprovals() {
+      const res = await fetch("/admin/approvals", { headers: this.authHeader() });
+      this.approvals = res.ok ? await res.json() : [];
+    },
+  },
+}).mount("#app");
+</script>
+</body>
+</html>
